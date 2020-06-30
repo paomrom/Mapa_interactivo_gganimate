@@ -1,0 +1,96 @@
+###Creación de mapa interactivo de Jalisco #####
+##Cargar libreria
+library(dplyr)
+library(tidyverse)
+library(gganimate)
+library(gifski)
+library(ggplot2)
+library(lubridate)
+library(gmodels)
+library(psych)
+library(sf)
+library(gridExtra)
+
+##Libreria sf (ShapeFile), es la que permite trabajar con .shp
+
+##Leer shapefile con los atributos y espacios que lo integren
+VioFam<-  st_read("C:/Users/Paola/Desktop/Proyectos/VioleFamRstudioCompleto.shp")
+View(VioFam)
+
+names(VioFam)
+class(VioFam)
+factor(VioFam$Nivel_2015)
+
+##Renombrar variable
+names(VioFam)[2]="2015"
+names(VioFam)[3]="2016"
+names(VioFam)[4]="2017"
+names(VioFam)[5]="2018"
+names(VioFam)[6]="2019"
+
+
+#Utilizando el comando st_geometry podemos ver las geometrías que incluye nuestro shapefile:
+st_geometry(VioFam)
+ggplot(data = VioFam)+
+  geom_sf()
+
+VioleFam<-gather(data = VioFam, key = "Anio", value = "Nivel", 2:6)
+View(VioleFam)
+
+VioleFam1 <- VioleFam %>%
+  mutate(Nivel=factor(Nivel,
+                      levels=c("Alta", "Alta-media", "Media","Baja", "Nula")))
+
+levels(VioleFam1$Nivel)
+
+##Determinar y nombrar los graficos que van ser la secuencia de tiempo y la interacción
+ggplot(data = VioleFam1)+
+  geom_sf(aes(fill = Nivel))+
+  theme_void()
+
+a <- ggplot(VioleFam1 %>%  filter(Anio == "2015")) +
+  geom_sf(aes(fill = Nivel))+
+  labs(subtitle = "Año: 2015")+
+  theme_void()
+
+b<- ggplot(VioleFam1 %>%  filter(Anio == "2016")) +
+  geom_sf(aes(fill = Nivel)) +
+  labs(subtitle = "Año: 2016")+
+  theme_void()
+
+c <- ggplot(VioleFam1 %>%  filter(Anio == "2017")) +
+  geom_sf(aes(fill = Nivel)) +
+  labs(subtitle = "Año: 2017")+
+  theme_void()
+
+d <- ggplot(VioleFam1 %>%  filter(Anio == "2018")) +
+  geom_sf(aes(fill = Nivel)) +
+  labs(subtitle = "Año: 2018")+
+  theme_void()
+
+e <- ggplot(VioleFam1 %>%  filter(Anio == "2019")) +
+  geom_sf(aes(fill = Nivel)) +
+  labs(subtitle = "Año: 2019")+
+  theme_void()
+
+###[a,b,c,d,e] integran la secuencia del mapa en uno
+grid.arrange(a,b,c,d,e)
+
+
+#Formato de mapa
+f<-ggplot(VioleFam1)+
+  geom_sf(aes(fill=Nivel))+
+  transition_manual(Anio)+
+  labs(subtitle = "Año {current_frame}", size=40,
+       title="Registro de Violencia Familiar",
+       caption = "Elaborado a partir de los datos abiertos del Secretariado Ejecutivo del Sistema Nacional de Seguridad Pública
+       @Paomrom")+
+  scale_fill_manual(values = c("#733299", "#ba4fe0", "#ce9aed", "#f4e6fc", "#F6DEEE"))+
+  theme_void()+
+  theme(
+    plot.title=element_text(size=40, hjust=0.5, face="bold", colour="#733299", vjust=1),
+    plot.subtitle=element_text(size=32, hjust=0.5, face="bold",  colour="#733299"),
+    legend.title = element_text(size=20),
+    legend.text = element_text(size=20))
+
+animate(f, 450, fps = 30, duration = 10, detail=15 ,width = 900, height = 600)
